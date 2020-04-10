@@ -9,18 +9,18 @@ const router = express.Router();
 
 // Read of CRUD 
 // Implement a GET request to pull in all of the accounts and budgets
-router.get('/', (req, res) => {
-  // get the data from the db
-  // select * from budget;
-  db.select('*')
-    .from('accounts') // returns a promise
-    .then(rows => {
-      res.status(200).json({ data: rows }); // Worked on Postman
-    })
-    .catch(error => {
-      res.status(500).json({ message: 'Sorry, could Not pull in your accounts and budgets from the table' });
-    });
-});
+// router.get('/', (req, res) => {
+//   // get the data from the db
+//   // select * from accounts;
+//   db.select('*')
+//     .from('accounts') // returns a promise
+//     .then(rows => {
+//       res.status(200).json({ data: rows }); // Worked on Postman
+//     })
+//     .catch(error => {
+//       res.status(500).json({ message: 'Sorry, could Not pull in your accounts and budgets from the table' });
+//     });
+// });
 
 // Read of CRUD
 router.get('/:id', (req, res) => {
@@ -41,7 +41,8 @@ router.get('/:id', (req, res) => {
 
 // Create of CRUD - Add some data with insert
 router.post('/', (req, res) => {
-  db('accounts').insert(req.body, "id") // second argument for postgress - it doesn't return an id automatically
+  db('accounts')
+    .insert(req.body, "id") // second argument for postgress - it doesn't return an id automatically
     .then(ids => {
     res.status(201).json({ newID: ids }) // SQLite3 will return an array of ids - Worked on Postman
   }) 
@@ -85,6 +86,42 @@ router.delete('/:id', (req, res) => {
     .catch(error => {
       res.status(500).json({ message: "Sorry, ran into an error" }); // Always catch it. 
     })
+});
+
+/* Stretch Problems 
+- Add a `query string` option to your `GET /api/accounts` endpoint. The `query string` may contain `limit`, `sortby` and `sortdir` keys. If these keys are provided, use these values to limit and sort the `accounts` which are selected from the database. Reference the docs for sorting and limiting in `knex`.
+
+```js
+// sample req.query object
+{
+  limit: 5,
+  sortby: 'id',
+  sortdir: 'desc'
+}
+```
+*/
+// Pull in the limit (5) and sorted accounts that were selected from the db. 
+// queryString
+router.get('/', (req, res) => {
+  console.log('get /')
+  console.log(req.query)
+  const orderby = req.query.orderby || 'id';
+  const limit = req.query.limit || -1;
+  const sortdir = req.query.sortdir || 'asc';
+
+  db('accounts')
+    .limit(limit)
+    .orderBy(orderby, sortdir)
+    .then(account => {
+      if (account) {
+        res.status(200).json({ data: account });
+      } else {
+        res.status(400).json({ message: "accounts not found" })
+      }
+    })
+    .catch((err) => {
+      res.status(500).json({ message: 'error fetching budget', err });
+    });
 });
 
 module.exports = router;
